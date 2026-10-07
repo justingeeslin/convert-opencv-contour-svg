@@ -42,23 +42,25 @@ class OpenCVContourSVGConverter:
 
         prepped = [prepare(c) for c in contours]
 
-        # Determine canvas/viewBox
-        if canvas_size is None:
-            all_pts = np.vstack(prepped)
-            min_xy = all_pts.min(axis=0)
-            max_xy = all_pts.max(axis=0)
-            # shift so everything is positive in viewBox
-            shift = -min_xy
-            prepped = [pts + shift for pts in prepped]
-            width, height = (max_xy - min_xy)
-            width = max(1.0, float(width))
-            height = max(1.0, float(height))
-            viewbox = (0.0, 0.0, width, height)
-        else:
+        all_pts = np.vstack(prepped)
+        min_xy = all_pts.min(axis=0)
+        max_xy = all_pts.max(axis=0)
+        # shift so everything is positive in viewBox
+        shift = -min_xy
+        prepped = [pts + shift for pts in prepped]
+        viewbox_width, viewbox_height = (max_xy - min_xy)
+        viewbox_width = max(1.0, float(viewbox_width))
+        viewbox_height = max(1.0, float(viewbox_height))
+        viewbox = (0.0, 0.0, viewbox_width, viewbox_height)
+
+        # Set a manual size based on measured dimensions when supplied
+        if canvas_size is not None:
             width, height = canvas_size
             width = float(width)
             height = float(height)
-            viewbox = (0.0, 0.0, width, height)
+        else:
+            # If not measured or manually set, use the viewbox height as a good reference
+            width, height = viewbox_width, viewbox_height
 
         # Build SVG elements
         def fmt_pts(pts):
@@ -77,7 +79,7 @@ class OpenCVContourSVGConverter:
 
         svg = f'''<?xml version="1.0" encoding="UTF-8"?>
     <svg xmlns="http://www.w3.org/2000/svg"
-         width="{viewbox[2]:.0f}px" height="{viewbox[3]:.0f}px"
+         width="{width:.0f}px" height="{height:.0f}px"
          viewBox="{viewbox[0]:.2f} {viewbox[1]:.2f} {viewbox[2]:.2f} {viewbox[3]:.2f}">
       {"  ".join(elements)}
     </svg>
